@@ -1,15 +1,35 @@
 """
 Version: 1.0
 
-Function: Capture images using usb cameras
+Function: Capture images using Arducam 16MP Autofocus Quad-Camera Kit for Raspberry Pi, 
+
+            16MP IMX519 Autofocus Synchronized Pi Camera, 
 
 Author: suxing liu
 
 Author-email: suxingliu@gmail.com
 
-USAGE
+USAGE:
 
     python3 img_capture.py -n 5
+    
+
+Parameters:
+
+    -p: path to image save folders, 
+    
+    -td: delay time for auto focus, time unit: ms
+   
+    -n: Number of image sets (4 images for one set)
+   
+    -ns: Moving steps of the stepper motor
+
+    -sf: stepper motor speed in clockwise direction
+
+    -sb, stepper motor speed in counterclockwise direction
+
+
+Note: all the paramters have default values, can be adjusted.
 
 """
 
@@ -195,9 +215,12 @@ if __name__ == '__main__':
     
     # construct the argument and parse the arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-p", "--path", required = False, help = "path to individual folders")
+    ap.add_argument("-p", "--path", required = False, help = "path to image save folders")
     ap.add_argument("-td", "--time_delay", required = False, type = int, default = 2000, help = "delay time for auto focus, time unit: ms")
     ap.add_argument("-n", "--number_set_img", required = False, type = int, default = 5, help = "Number of image sets (4 images for one set)")
+    ap.add_argument("-ns", "--n_step", required = False, type = int, default = 20, help = "Moving steps of the stepper motor")
+    ap.add_argument("-sf", "--speed_forward", required = False, type = float, default = 0.1, help = "stepper motor speed in clockwise direction")
+    ap.add_argument("-sb", "--speed_backword", required = False, type = float, default = 0.005, help = "stepper motor speed in counterclockwise direction")
     args = vars(ap.parse_args())
     
    
@@ -205,16 +228,22 @@ if __name__ == '__main__':
     # path to individual folders
     current_path = args["path"]
     time_delay = args["time_delay"]
+    
+    # set of images to capture
     n_set_img = args["number_set_img"]
     
+    # set the stepper movement parameters
+    n_step = args["n_step"]
+    speed_forward_sec = args["speed_forward"]
+    speed_backword_sec = args["speed_backword"]
+    
+    
+    
+    # setup image storage path
     if (args['path']):
         save_path = args['path']
     else:
-         # save folder construction
-        #mkpath = os.path.dirname(abs_path) +'/marker_detection'
-        #mkdir(mkpath)
-        #marker_save_path = mkpath + '/'
-        
+        # save folder construction
         current_path = os.getcwd()
         
         #setup saving path for captured images
@@ -230,10 +259,10 @@ if __name__ == '__main__':
     execute_script(list_camera_cmd)
     
     
-    # capture images
+    
     
     #Initialize Pi borad pins for motor 
-    ######################################################
+    ####################################################################
     # Direction pin from controller
     DIR = 10
     
@@ -245,7 +274,7 @@ if __name__ == '__main__':
     CCW = 1
 
     # Steps per Revolution (360 / 7.5)
-    SPR = 48   
+    #SPR = 48   
 
 
     GPIO.setwarnings(False)
@@ -259,26 +288,18 @@ if __name__ == '__main__':
 
     # Set the first direction you want it to spin
     GPIO.output(DIR, CW)
+    ####################################################################
 
 
-
-    # set the stepper movement parameters
-    #######################################################################
-    speed_forward_sec = .1
-
-    speed_backword_sec = .005
-
-    step_number = 20
     
-    current_angle = 0  # Assume the way it is pointing is zero degrees
+
+    # Assume the way it is pointing is zero degrees
+    #current_angle = 0  
+
     
     
-    #move_to(STEP, current_angle, 10)
-    
-    ###################################################################
     # move specific numbers and capture images
-    
-    
+    ###################################################################
     #n_set_img = 5
     
     #capture image pipeline, keep camera open and streaming  
@@ -289,20 +310,19 @@ if __name__ == '__main__':
         (cost_time, error) = single_image_capture(save_path)
         
         #wait the motor to move to next angle
-        time.sleep(move_setps(CW, step_number))
+        time.sleep(move_setps(CW, n_step))
     
     
     #move_setps(CW, step_number)
     
-    
     #change_direction(DIR,CCW)
-    
-    
+
     #move_setps(CCW, 10)
     
-    
+    ####################################################################
     # clean up Pi board GPIO pins
     print("Stepper motor finished moving, cleanup GPIO")
+    
     GPIO.cleanup()
     
 
