@@ -22,7 +22,7 @@ Parameters:
    
     -n: Number of image sets (4 images for one set)
    
-    -ns: Moving steps of the stepper motor
+    -nd: Moving steps of the stepper motor
 
     -sf: stepper motor speed in clockwise direction
 
@@ -41,6 +41,8 @@ import numpy as np
 import pathlib
 import os
 import glob
+
+import shutil
 
 import time
 from time import sleep
@@ -73,9 +75,9 @@ def mkdir(path):
         return True
     else:
         # if exists, return 
-        #print path+' path exists!'
-        #shutil.rmtree(path)
-        #os.makedirs(path)
+        print('path exists!\n')
+        shutil.rmtree(path)
+        os.makedirs(path)
         return False
         
 
@@ -105,7 +107,7 @@ def execute_script(cmd_line):
 # make the stepper motor move specific numbers
 def move_setps(direction_sign, step_number):
     
-    
+    # get the direction to move stepper motor
     if direction_sign == 0:
         print("Moving {} steps in clockwise direction...\n".format(step_number))
     else:
@@ -114,6 +116,7 @@ def move_setps(direction_sign, step_number):
     #record the start time
     start_time = time.time()
 
+    # move specific steps
     for x in range(step_number):
         # Set one coil winding to high
         GPIO.output(STEP,GPIO.HIGH)
@@ -130,6 +133,7 @@ def move_setps(direction_sign, step_number):
     #output cost time
     print("Time used for stepper motor movement: {0:.2f} seconds\n".format(cost_time))
     
+    # return the time used for moving specific steps
     return cost_time
     
 
@@ -140,6 +144,8 @@ def change_direction(DIR,CCW):
     print("Change direction...\n".format(step_number))
     
     sleep(1.0)
+    
+    # change the GPIO output voltage
     GPIO.output(DIR,CCW)
 
 
@@ -152,21 +158,20 @@ def single_image_capture(file_path):
     #record the time for capture and write images
     start_time = time.time()
     
+    # initialize error sign
     error = 0
     
-    
-    
+    #output image storage path
     print("Writing images to folder '{}'...\n".format(file_path))
     
     file_path_full = file_path + '/'
 
-    # python3 skeleton_graph.py -p ~/example/pt_cloud/tiny/ -m1 tiny_skeleton.ply
-    #skeleton_analysis = "python3 skeleton_graph.py -p " + file_path_full + " -m1 " + model_skeleton_name
-    
+    # set the camera list by ID
     camera_IC_list = ["i2cset -y 10 0x24 0x24 0x02", "i2cset -y 10 0x24 0x24 0x12",
                         "i2cset -y 10 0x24 0x24 0x22", "i2cset -y 10 0x24 0x24 0x32"]
     
     
+    # capture images in sequential order, as instructed by Arducam 16MP Autofocus Quad-Camera Kit
     for image_id, set_cam_ID in enumerate(camera_IC_list):
         
         img_name =  "{:%Y-%m-%d-%H-%M-%S}".format(datetime.now())
@@ -184,7 +189,7 @@ def single_image_capture(file_path):
         
         execute_script(capture_cmd)
         
-    
+    # resume camera to normal status
     resume_cmd = "i2cset -y 10 0x24 0x24 0x00"
     
     execute_script(resume_cmd)
@@ -196,18 +201,26 @@ def single_image_capture(file_path):
     print("Time used for capturing images: {0:.2f} seconds\n".format(cost_time))
     
     
+    # check images 
     if len(os.listdir(file_path_full)) == 0:
         print("Image output directory is empty\n")
     else:    
-        print("Image saved\n")
+        print("Image capture successful..\n")
         error = 1
     
     
     return cost_time, error
         
 
+# convert degree to steps for stepper motor to move 
+def degree_step(v_degree):
+    #[(960 teeth in large gear/20 teeth in small gear)*(200 motor steps/one full revolution of small gear)] = 9600 motor steps/one full revolution of large gear
     
-
+    steps_per_degree = 9600/360
+    
+    steps_motor = round(v_degree*steps_per_degree)
+    
+    return steps_motor
 
    
     
@@ -218,8 +231,8 @@ if __name__ == '__main__':
     ap.add_argument("-p", "--path", required = False, help = "path to image save folders")
     ap.add_argument("-td", "--time_delay", required = False, type = int, default = 2000, help = "delay time for auto focus, time unit: ms")
     ap.add_argument("-n", "--number_set_img", required = False, type = int, default = 5, help = "Number of image sets (4 images for one set)")
-    ap.add_argument("-ns", "--n_step", required = False, type = int, default = 20, help = "Moving steps of the stepper motor")
-    ap.add_argument("-sf", "--speed_forward", required = False, type = float, default = 0.1, help = "stepper motor speed in clockwise direction")
+    ap.add_argument("-nd", "--n_degree", required = False, type = int, default = 6, help = "Moving angles of the stepper motor, 6 degree as default")
+    ap.add_argument("-sf", "--speed_forward", required = False, type = float, default = 0.01, help = "stepper motor speed in clockwise direction")
     ap.add_argument("-sb", "--speed_backword", required = False, type = float, default = 0.005, help = "stepper motor speed in counterclockwise direction")
     args = vars(ap.parse_args())
     
@@ -233,7 +246,10 @@ if __name__ == '__main__':
     n_set_img = args["number_set_img"]
     
     # set the stepper movement parameters
-    n_step = args["n_step"]
+    n_step = degree_step(args["n_degree"])
+    
+    print("{} steps are needed to move {} degree\n".format(n_step, args["n_degree"]))
+    
     speed_forward_sec = args["speed_forward"]
     speed_backword_sec = args["speed_backword"]
     
@@ -253,7 +269,7 @@ if __name__ == '__main__':
         mkdir(mkpath)
         save_path = mkpath + '/'
     
-    # list device 
+    # list device (all cameras on board) 
     list_camera_cmd = "libcamera-still --list-camera"
     
     execute_script(list_camera_cmd)
