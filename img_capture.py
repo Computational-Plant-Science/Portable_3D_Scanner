@@ -11,7 +11,7 @@ Author-email: suxingliu@gmail.com
 
 USAGE:
 
-    python3 img_capture.py -n 5
+    python3 img_capture.py -id 1 -n 5
     
 
 Parameters:
@@ -120,6 +120,8 @@ def single_image_capture(file_path):
         
         img_name =  "{:%Y-%m-%d-%H-%M-%S}".format(datetime.now())
         
+        img_name = ID_Pi + img_name
+        
         img_file = file_path + img_name + "_{:02d}".format(image_id) + ".jpg"
         
         
@@ -163,6 +165,7 @@ if __name__ == '__main__':
     # construct the argument and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-p", "--path", required = False, help = "path to image save folders")
+    ap.add_argument("-id", "--pi_id", required = False, type = int, default = '0', help = "Pi ID to capture images")
     ap.add_argument("-td", "--time_delay", required = False, type = int, default = 2000, help = "delay time for auto focus, time unit: ms")
     ap.add_argument("-n", "--number_set_img", required = False, type = int, default = 1, help = "Number of image sets (4 images for one set)")
     ap.add_argument("-nd", "--n_degree", required = False, type = int, default = 6, help = "Moving angles of the stepper motor, 6 degree as default")
@@ -177,6 +180,14 @@ if __name__ == '__main__':
     # set of images to capture
     n_set_img = args["number_set_img"]
 
+    
+    # assign camera ID name by Pi ID
+    if args["pi_id"] ==1:
+        
+        ID_Pi = "Pi01_"
+    else:
+        ID_Pi = "Pi02_"
+    
     
     
     # setup image storage path

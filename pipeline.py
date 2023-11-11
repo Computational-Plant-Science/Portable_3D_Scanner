@@ -148,7 +148,9 @@ def Pi_img_capture(ID_PI):
         
         print("Capture images using PiController...\n")
         # PiController with IP address 192.168.1.5, current local Pi, no need ssh
-        cmd_line = "./img_cap_remote.sh"
+        #cmd_line = "./img_cap_remote.sh"
+        
+        cmd_line = "python3 img_capture.py -id 1"
     
     elif ID_PI == 6:
         
@@ -178,26 +180,6 @@ def Pi_img_capture(ID_PI):
         
 
 
-
-def parallel_capture(n_set_img, ID_PI):
-    
-    
-    # capture image pipeline, keep camera open and streaming  
-    for index in range(n_set_img):
-
-        print("Capturing and writing {} set of images using Arducam 16MP Autofocus Quad-Camera Kit...\n".format(index+1))
-        
-        #image capture for both PiController and Pi01 
-        (cost_time, error) = Pi_img_capture(ID_PI)
-        
-        if ID_PI == 5:
-            
-            #wait the motor to move to next angle
-            time.sleep(move_setps(CW, n_step))
-        else:
-            print("Waiting for Pi01 to finish the task!\n")
-        
- 
 
 # convert degree to steps for stepper motor to move 
 def degree_step(v_degree):
@@ -285,7 +267,7 @@ if __name__ == '__main__':
     # Assume the way it is pointing is zero degrees
     #current_angle = 0  
     
-    ID_PI = 6
+    #ID_PI = 6
 
     #parallel_capture(n_set_img, ID_PI)
     
