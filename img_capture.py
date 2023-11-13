@@ -198,9 +198,10 @@ if __name__ == '__main__':
         current_path = os.getcwd()
         
         #setup saving path for captured images
-        date_today = str(date.today())
+        #date_today = str(date.today())
+        folder_name = 'image_data'
         
-        mkpath = current_path + '/' + date_today
+        mkpath = current_path + '/' + folder_name
         mkdir(mkpath)
         save_path = mkpath + '/'
     

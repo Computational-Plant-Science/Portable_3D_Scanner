@@ -38,7 +38,7 @@ import numpy as np
 import pathlib
 import os
 import glob
-
+import fnmatch
 import shutil
 
 import time
@@ -261,7 +261,7 @@ if __name__ == '__main__':
     GPIO.output(DIR, CW)
     
 
-    # move specific numbers and capture images
+    # stepper motor move specific steps and capture images
     ###################################################################
     #n_set_img = 5
     # Assume the way it is pointing is zero degrees
@@ -284,18 +284,74 @@ if __name__ == '__main__':
         #wait the motor to move to next angle
         time.sleep(move_setps(CW, n_step))
 
-    
-    #move_setps(CW, step_number)
-    
-    #change_direction(DIR,CCW)
 
-    #move_setps(CCW, 10)
-    
     ####################################################################
     # clean up Pi board GPIO pins
     print("Stepper motor finished moving, cleanup GPIO")
     
     GPIO.cleanup()
+    
+    # transfer images from Pi01 to PiController and delete the image folder 
+    #####################################################################
+    
+    #python3 img_transfer.py -p /home/pi/code/image_data/ -a 1
+    
+    if os.path.exists('/home/pi/code/image_data/'):
+        
+        # trasnfer images from Pi01 to PiController
+        transfer_cmd = "python3 /home/pi/code/img_transfer.py -p /home/pi/code/image_data/ -a 1"
+        
+        execute_script(transfer_cmd)
+        
+            
+        img_path = r'/home/pi/code/image_data/'
+        
+        img_count = len(fnmatch.filter(os.listdir(img_path),'*.jpg'))
+    
+        # delete the  image folder on Pi01 and rename the image folder containing all the images
+        # delete the image folder on Pi01
+        if img_count == n_set_img*4*2:
+        
+            print('Image transfer successfully\n')
+            
+            delete_img = "python3 /home/pi/code/img_transfer.py -p /home/pi/code/image_data/ -a 2"
+            
+            execute_script(delete_img)
+            
+            
+            # rename the image folder in PiController as date of today
+            date_today = str(date.today())
+            
+            os.chdir("/home/pi/code/")
+            
+            os.rename("image_data", date_today)
+            
+            # path of all images
+            all_image_path = '/home/pi/code/' + date_today + '/'
+            
+        
+            if len(fnmatch.filter(os.listdir(all_image_path),'*.jpg')) == img_count:
+            
+                print("Captured images folder: {}\n".format(all_image_path))
+
+            else:
+                print('Image transfer failed\n')
+        
+    else:
+        
+        print('Image folder does not exist!\n')
+    
+    
+
+    
+    
+
+
+    #move_setps(CCW, 10)
+
+    
+    
+
     
 
 
