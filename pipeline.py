@@ -271,6 +271,12 @@ if __name__ == '__main__':
 
     #parallel_capture(n_set_img, ID_PI)
     
+    #clear old images
+    if os.path.exists('/home/pi/code/image_data/'):
+        shutil.rmtree('/home/pi/code/image_data/')
+        print("Clear old image data\n")
+        
+    
     
     # capture image pipeline, keep camera open and streaming  
     for index in range(n_set_img):
