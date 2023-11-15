@@ -1,5 +1,15 @@
 # Portable_3D_Scanner
 
+Function:
+
+Users can remotely access the two-pi clusters via Bluetooth and capture images with stepper motor control.
+
+The two-pi cluster will automatically connect to your laptop/PC via Bluetooth at startup, 
+
+after pairing the two-pi cluster with your laptop/PC only the first time. 
+
+This allows the laptop/PC to send out a command to start the imaging pipeline. No router or Wi-Fi is needed.
+
 
 Parts:
 2 Raspberry Pi 4 Model B
