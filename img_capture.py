@@ -261,12 +261,12 @@ if __name__ == '__main__':
     
     
     # setup lens position in mannual mode, disable autofocus model
-    picam2.set_controls({"AfMode": 0, "LensPosition": 4.0})
+    #picam2.set_controls({"AfMode": 0, "LensPosition": 4.0})
 
     #picam2.set_controls({"ExposureTime": EXPOSURE_TIME, "AnalogueGain": 2.8})
     
     # setup exposure time and gain
-    picam2.set_controls({"AeEnable": False, "ExposureTime": 30000, "AnalogueGain": 1.0})
+    #picam2.set_controls({"AeEnable": False, "ExposureTime": 30000, "AnalogueGain": 1.0})
 
     # start camera thread
     picam2.start()
