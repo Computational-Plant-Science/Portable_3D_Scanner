@@ -55,8 +55,6 @@ from multiprocessing import Pool
 # execute script inside program
 def execute_script(cmd_line):
     
-
-    
     print(cmd_line)
     
     
@@ -80,9 +78,14 @@ def execute_script(cmd_line):
     except OSError:
         
         print("Failed ...!\n")
-
-
-
+    '''
+    try:
+        subprocess.run(cmd_line, universal_newlines=True, check=False, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    except RuntimeError as e:
+        print(f'Error: {e}')
+    except:
+        print("Set up error!")
+    '''
 
 
 # make the stepper motor move specific numbers
@@ -156,6 +159,7 @@ def Pi_img_capture(ID_PI):
         
         print("Capture images using Pi01...\n")
         # Pi01 with IP address 192.168.1.6, remote access from PiController to Pi01 using ssh and bash command to capture images
+        # ssh -t < was to run a local shell script on a remote machine
         cmd_line = "ssh -t pi@192.168.1.6 < img_cap_remote.sh"
     
     else:
@@ -173,7 +177,7 @@ def Pi_img_capture(ID_PI):
     cost_time = time.time() - start_time
 
     #output cost time
-    print("Time used for capturing images: {0:.2f} seconds\n".format(cost_time))
+    #print("Time used for capturing images: {0:.2f} seconds\n".format(cost_time))
     
     
     return cost_time, error
@@ -185,7 +189,9 @@ def Pi_img_capture(ID_PI):
 def degree_step(v_degree):
     #[(960 teeth in large gear/20 teeth in small gear)*(200 motor steps/one full revolution of small gear)] = 9600 motor steps/one full revolution of large gear
     
-    steps_per_degree = 9600/360
+    #steps_per_degree = 24.8*9600/360
+    
+    steps_per_degree = 25*9600/360
     
     steps_motor = round(v_degree*steps_per_degree)
     
@@ -201,10 +207,10 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     #ap.add_argument("-p", "--path", required = False, help = "path to image save folders")
     #ap.add_argument("-td", "--time_delay", required = False, type = int, default = 2000, help = "delay time for auto focus, time unit: ms")
-    ap.add_argument("-n", "--number_set_img", required = False, type = int, default = 5, help = "Number of image sets (4 images for one set)")
-    ap.add_argument("-nd", "--n_degree", required = False, type = int, default = 6, help = "Moving angles of the stepper motor, 6 degree as default")
-    ap.add_argument("-sf", "--speed_forward", required = False, type = float, default = 0.01, help = "stepper motor speed in clockwise direction")
-    ap.add_argument("-sb", "--speed_backword", required = False, type = float, default = 0.005, help = "stepper motor speed in counterclockwise direction")
+    ap.add_argument("-n", "--number_set_img", required = False, type = int, default = 1, help = "Number of image sets (4 images for one set)")
+    #ap.add_argument("-nd", "--n_degree", required = False, type = int, default = 1, help = "Moving angles of the stepper motor, 6 degree as default")
+    ap.add_argument("-sf", "--speed_forward", required = False, type = float, default = 0.0001, help = "stepper motor speed in clockwise direction")
+    ap.add_argument("-sb", "--speed_backword", required = False, type = float, default = 0.0001, help = "stepper motor speed in counterclockwise direction")
     args = vars(ap.parse_args())
     
    
@@ -216,11 +222,24 @@ if __name__ == '__main__':
     # set of images to capture
     n_set_img = args["number_set_img"]
     
+    
+    # calculate angle needed to finsih n_set_img
+    
+    n_degree = 360/n_set_img
+    
+   
     # set the stepper movement parameters
-    n_step = degree_step(args["n_degree"])
+    n_step = degree_step(n_degree)
     
-    print("{} steps are needed to move {} degree\n".format(n_step, args["n_degree"]))
     
+    print("Stops for 360 degree scan:{}\n".format(n_set_img))
+
+    print("Degrees per stop:{0:.2f}\n".format(n_degree))
+    
+    print("Microsteps for motor per stop:{}\n".format(n_step))
+
+    
+    # motor speed
     speed_forward_sec = args["speed_forward"]
     speed_backword_sec = args["speed_backword"]
     
@@ -235,10 +254,10 @@ if __name__ == '__main__':
     #Initialize Pi borad pins for motor 
     ####################################################################
     # Direction pin from controller
-    DIR = 10
+    DIR = 7
     
     # Step pin from controller
-    STEP = 11
+    STEP = 26
     
     # 0/1 used to signify clockwise or counterclockwise.
     CW = 0
@@ -281,19 +300,38 @@ if __name__ == '__main__':
     # capture image pipeline, keep camera open and streaming  
     for index in range(n_set_img):
 
-        print("Capturing and writing {} set of images using Arducam 16MP Autofocus Quad-Camera Kit...\n".format(index+1))
+        print("Scan cycle {}...\n".format(index+1))
         
+        '''
         with Pool(processes = 2) as pool:
             
             result = pool.map(Pi_img_capture, [5,6])
-
+        '''
+        
+        
+        (cost_time, error) = Pi_img_capture(5)
+        
+        if error == 0:
+            print("PiController images capture finished in {0:.2f} seconds\n".format(cost_time))
+        else:
+            print("PiController imgage capture failed!\n")
+        
+        (cost_time, error) = Pi_img_capture(6)
+        
+        if error == 0:
+            print("Pi01 images capture finished in {0:.2f} seconds\n".format(cost_time))
+        else:
+            print("Pi01 imgage capture failed!\n")
+        
+        
+        
         #wait the motor to move to next angle
         time.sleep(move_setps(CW, n_step))
 
 
     ####################################################################
     # clean up Pi board GPIO pins
-    print("Stepper motor finished moving, cleanup GPIO")
+    print("Stepper motor finished moving, cleanup GPIO\n")
     
     GPIO.cleanup()
     
@@ -316,32 +354,32 @@ if __name__ == '__main__':
     
         # delete the  image folder on Pi01 and rename the image folder containing all the images
         # delete the image folder on Pi01
-        if img_count == n_set_img*4*2:
+        #if img_count == n_set_img*4*2:
         
-            print('Image transfer successfully\n')
-            
-            delete_img = "python3 /home/pi/code/img_transfer.py -p /home/pi/code/image_data/ -a 2"
-            
-            execute_script(delete_img)
-            
-            
-            # rename the image folder in PiController as date of today
-            date_today = str(date.today())
-            
-            os.chdir("/home/pi/code/")
-            
-            os.rename("image_data", date_today)
-            
-            # path of all images
-            all_image_path = '/home/pi/code/' + date_today + '/'
-            
+        print('Image transfer successfully\n')
         
-            if len(fnmatch.filter(os.listdir(all_image_path),'*.jpg')) == img_count:
-            
-                print("Captured images folder: {}\n".format(all_image_path))
+        delete_img = "python3 /home/pi/code/img_transfer.py -p /home/pi/code/image_data/ -a 2"
+        
+        execute_script(delete_img)
+        
+        
+        # rename the image folder in PiController as date of today
+        date_today = str(date.today())
+        
+        os.chdir("/home/pi/code/")
+        
+        os.rename("image_data", date_today)
+        
+        # path of all images
+        all_image_path = '/home/pi/code/' + date_today + '/'
+        
+    
+        if len(fnmatch.filter(os.listdir(all_image_path),'*.jpg')) == img_count:
+        
+            print("Captured images folder: {}\n".format(all_image_path))
 
-            else:
-                print('Image transfer failed\n')
+        else:
+            print('Image transfer failed\n')
         
     else:
         
