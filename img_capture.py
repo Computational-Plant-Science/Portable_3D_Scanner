@@ -11,7 +11,7 @@ Author-email: suxingliu@gmail.com
 
 USAGE:
 
-    python3 img_capture.py -id 1 -n 5
+    python3 img_capture.py -id 1 -n 1
     
 
 Parameters:
@@ -141,32 +141,33 @@ def single_image_capture(file_path):
 
         # test live: libcamera-still -t 0 --autofocus-mode manual --lens-position 4.5 --ev -2.3 
         #capture_cmd = set_cam_ID + " && " + "libcamera-still -t 2000 -n -o " + img_file + " --width 4656 --height 3496"
-        
         #capture_cmd = set_cam_ID + " && " + "libcamera-still -t " + str(time_delay) + " -n --autofocus-mode manual --lens-position 4.0 --ev -2.3 -o " + img_file + " --width 4656 --height 3496" 
-        
         #capture_cmd = set_cam_ID + " && " + "libcamera-still -t " + str(time_delay) + " -n --autofocus-mode manual --lens-position 4.0 --ev -2.8 -o " + img_file + " --width 4656 --height 3496" 
-
+    
+        # choose individual camera based on camera_IC_list
         capture_cmd = set_cam_ID
         
-        print(capture_cmd)
+        # outpout the selecting camera command to the screen
+        print("Selecting camera '{}'...\n".format(capture_cmd))
         
         execute_script(capture_cmd)
         
-        #time.sleep(0.5)
+        # let camera has enough time to adjust 
+        time.sleep(0.5)
         
         # AfMode: Set the AF mode (manual, auto, continuous)
         # LensPosition: Manual focus, Set the lens position.
         
         ###################################################
-        # Individual camera setting test
+        # Tro to control individual camera settings after select  
         
         # setup lens position in mannual mode, disable autofocus model
-        picam2.set_controls({"AfMode": 0, "LensPosition": LensPosition_parameter[image_id]})
+        #picam2.set_controls({"AfMode": 0, "LensPosition": LensPosition_parameter[image_id]})
 
         #picam2.set_controls({"ExposureTime": EXPOSURE_TIME, "AnalogueGain": 2.8})
 
         # setup exposure time and gain
-        picam2.set_controls({"AeEnable": False, "ExposureTime": ExposureTime_parameter[image_id], "AnalogueGain": AnalogueGain_parameter[image_id]})
+        #picam2.set_controls({"AeEnable": False, "ExposureTime": ExposureTime_parameter[image_id], "AnalogueGain": AnalogueGain_parameter[image_id]})
         
         ##################################################
         
@@ -260,6 +261,8 @@ if __name__ == '__main__':
     picam2.configure(capture_config)
     
     
+    # control 4 cameras together connected to one pi 
+    ######################################################################
     # setup lens position in mannual mode, disable autofocus model
     #picam2.set_controls({"AfMode": 0, "LensPosition": 4.0})
 
@@ -268,6 +271,10 @@ if __name__ == '__main__':
     # setup exposure time and gain
     #picam2.set_controls({"AeEnable": False, "ExposureTime": 30000, "AnalogueGain": 1.0})
 
+    #####################################################################
+    
+    
+    
     # start camera thread
     picam2.start()
     
