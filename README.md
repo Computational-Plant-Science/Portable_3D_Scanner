@@ -27,7 +27,7 @@ Each raspberry pi equipped with a Arducam 16MP Autofocus Quad-Camera Kit, 16MP I
 
 ![Setpper motor and driver](../main/media/Picture5.jpg)
 
-![3D model reconstrcution results](../main/media/Picture8.jpg)
+![3D model reconstrcution results](../main/media/Picture8.png)
 
 
 
