@@ -1,85 +1,75 @@
-# Portable_3D_Scanner
+# Portable 3D_Scanner
 
-Function:
-
-Users can remotely access the two-pi clusters via Bluetooth and capture images with stepper motor control.
-
-The two-pi cluster will automatically connect to your laptop/PC via Bluetooth at startup, 
-
-after pairing the two-pi cluster with your laptop/PC only the first time. 
-
-This allows the laptop/PC to send out a command to start the imaging pipeline. No router or Wi-Fi is needed.
+Author: Suxing Liu, Ruben Pena
 
 
-Parts:
-2 Raspberry Pi 4 Model B
-1 crossover ethernet cable
-Arducam 16MP Autofocus Quad-Camera Kit for Raspberry Pi, 16MP IMX519 Autofocus Synchronized Pi Camera
-Stepper motor plus hat
-
-Step 1: Connect one Raspberry Pi (master/controller) to cameras and the stepper motor.
-
-Step 2: Connect the second Raspberry Pi to cameras and the first Raspberry Pi via crossover cable.
-
-Configure each Pi to have a unique static IP within the same network.
-sudo geany /etc/network/interfaces
-
-For example, setup PiController (IP address: 192.168.1.5) (PiController)
-                      setup Pi 01 (IP address: 192.168.1.6)
-on PiController
-auto eth0
-iface eth0 inet static
-address 192.168.1.5
-netmask 255.255.255.0
-gateway 192.168.1.6
-
-on Pi 01
-auto eth0
-iface eth0 inet static
-address 192.168.1.6
-netmask 255.255.255.0
-gateway 192.168.1.5
-
-Step 3: Setup Bluetooth connection between a PC/laptop (Windows OS) and the Raspberry Pi (PiController) to enable wireless access to the Pi.
-
-Login into PiController:
-sudo nano /etc/systemd/system/dbus-org.bluez.service
-
-Add a ' -C' compatibility flag at the end of the ExecStart= line, and add a new line to add the SP profile. The two lines should look like this:
-ExecStart=/usr/lib/bluetooth/bluetoothd -C
-ExecStartPost=/usr/bin/sdptool add SP
 
 
-Save the file and reboot. Now enter this line in a terminal:
+![Prototype](../main/media/Picture4.jpg)
 
-sudo rfcomm watch hci0 1 getty rfcomm0 115200 vt100 -a pi
+![Portable 3D_Scanner working in the lab](../main/media/Picture7.jpg)
 
-(Remember to type in above command!)
-
-
-Paring the Raspberry Pi to your laptop/PC.
-On your Raspberry Pi:
-1.	Click Bluetooth ‣ Turn On Bluetooth (if it’s off)
-2.	Click Bluetooth ‣ Make Discoverable
-3.	Click Bluetooth ‣ Add Device
-4.	Your phone will appear in the list, select it and click Pair
+![Portable 3D_Scanner working in the field](../main/media/Picture3.jpg)
 
 
-Login into your PC/laptop with Windows OS:
+
+Function: Capture images around one root sample
+
+Illumination environment:  LED light intensity can be adjusted from weak to strong, suggest to adjust the lighting of LED lights via capture sample images and visually check the quality. The lights in the basement room can be turned off. 
+
+![Led lights](../main/media/Picture2.jpg)
+
+Main parts: Two raspberry pi 4 model b+ with USB 3.0 interface (Controller pi and Pi01), connected via cross over ethernet cable (Not traditional ethernet cable), 
+
+Each raspberry pi equipped with a Arducam 16MP Autofocus Quad-Camera Kit, 16MP IMX519 Autofocus Synchronized Pi Camera. A step motor and driver control the movement of the whole frame. 
+
+![Cameras](../main/media/Picture6.jpg)
+
+![Setpper motor and driver](../main/media/Picture5.jpg)
+
+![3D model reconstrcution results](../main/media/Picture8.jpg)
 
 
-Download PuTTY terminal program and install it to your PC.
-To associate a COM port with a Rasperry Pi/ Windows 10 Bluetooth pairing, we proceed as follows:
-On your Windows 10 Desktop/ Laptop first enable the Bluetooth transceiver. Select Start, Settings, then Devices. At this point resist the intuitive temptation to Add bluetooth or other device. Instead, scroll down to 'Related settings', and select Devices and printers. Find your Desktop/ Laptop under 'Devices', right click it, then select Bluetooth settings from the pop up menu. This brings up the 'Bluetooth settings dialogue:
-Select the COM ports tab, then select Add... to bring up the 'Add COM port' dialogue. Here we select the 'Outgoing' radio button, and then click on Browse... This will yield the 'Select Bluetooth Device' dialogue. All going well, you should see your Raspberry Pi listed as a discovered device. Select the Raspberry Pi device listed, and click OK twice. This should take you back to the COM ports tabbed dialogue, and list a COM port that is now associated with the Windows 10/ Raspberry Pi pairing. Take note of which COM port has been assigned.
-       
-Login to Your Pi's Bluetooth Shell.
 
- 
+Operation
 
-You should now be able to initiate a login session from your Windows 10 PC, using the numbered COM port previously noted, at a speed of 115200 bps.
- 
-Good Luck!
+1. Turn on the power of the surge protector, which connects to all the power of the scanner.
 
-Reference: https://forums.raspberrypi.com//viewtopic.php?p=955425#p956581
-https://www.instructables.com/Raspberry-Pi-Bluetooth-to-PuTTY-on-Windows-10/
+2. Check the display directly connects to “pi controller”, Make sure wireless mouse/keyboard was turned on.
+
+3. Open command window from “pi controller” terminal, type command lines:
+```bash
+    cd code/cam                  #enter working path
+
+    python3 cluster_connection.py          # check the raspberry pi unit’s connection to each other
+
+    python3 pipeline.py -n 5                # scan root, image data will be stored in the folder named as current  
+                                                                       year-date format such as /2024-10-16/
+```
+    Parameters:
+    -n: Number of image sets (4 images for one set)
+    -nd: Moving steps of the stepper motor
+    -sf: stepper motor speed in clockwise direction
+    -sb, stepper motor speed in counterclockwise direction
+    Note: all the parameters have default values, can be adjusted.
+
+
+If error. Reboot the whole system: 
+```bash
+python3 cluster_reboot.py  
+```
+
+Rotate the camera arm to its original position and restart the scan process.
+
+4. Transfer files to your local computer.
+Connect your mobile drive to the controller pi, rename the folder /2024-10-16/ as /genotype-samplenumber/ and download the folder from “pi controller” to your mobile drive.
+
+6. Delete files from “pi controller” and raspberry pi units.
+
+7. Shutdown system
+
+```bash
+    Python3 cluster_shutdown.py
+```
+8. Turn off the power of surge protector
+    
